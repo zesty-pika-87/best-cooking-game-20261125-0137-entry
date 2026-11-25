@@ -8,7 +8,7 @@ import { SCREEN_OVER, SCREEN_PLAY, SCREEN_TITLE } from './render.js';
 
 const START_SECONDS = 5;
 const PLAY_SECONDS = 62;
-const COMBO_SECONDS = 110;
+const COMBO_SECONDS = 70;
 const END_LIMIT_SECONDS = 240;
 
 // Autopilot: ikuti rute optimal. Berdiri di titik stasiun pertama rute,

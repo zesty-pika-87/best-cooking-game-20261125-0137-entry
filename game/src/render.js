@@ -1,7 +1,7 @@
 // Pasar Malam Rush — semua gambar digambar dari kode (Canvas 2D, tanpa aset
 // luar). Satu frame harus memuat keenam elemen kriteria 1: dapur, order board,
 // bahan di counter, hidangan mid-assembly, timer, dan piring siap saji.
-import { W, H, STATIONS, STATION_ORDER, INGREDIENTS, recipeById } from './config.js';
+import { W, H, STATIONS, STATION_ORDER, INGREDIENTS, recipeById, COOK_TIME, WIN_SERVES } from './config.js';
 import { SCREEN_TITLE, SCREEN_PAUSED, SCREEN_OVER, drawTitle, drawPaused, drawOver } from './screens.js';
 
 export { SCREEN_TITLE, SCREEN_PLAY, SCREEN_PAUSED, SCREEN_OVER } from './screens.js';
@@ -289,7 +289,7 @@ function drawFloor(ctx) {
 // Counter bawah dengan 10 bak bahan berlabel — "bahan di counter".
 function drawCounter(ctx) {
   const ids = Object.keys(INGREDIENTS);
-  const bw = 124;
+  const bw = 112;
   const gap = 4;
   ctx.fillStyle = '#5a3a1e';
   ctx.fillRect(0, 606, W, 114);
@@ -325,7 +325,11 @@ function drawStations(ctx, state) {
     ctx.fillStyle = s.color;
     ctx.fill();
     text(ctx, s.name, s.x + s.w / 2, s.y + 24, 'bold 21px Georgia, serif', '#241a10', 'center');
-    text(ctx, s.sub, s.x + s.w / 2, s.y + 128, '15px Georgia, serif', '#6a5a3a', 'center');
+    // Sub stasiun; Jendela Saji memakai baris ini untuk teks TERSAJI bila
+    // sudah ada piring tersaji, supaya dua teks tidak menumpuk.
+    if (!(id === 'serve' && state.servedPlates.length > 0)) {
+      text(ctx, s.sub, s.x + s.w / 2, s.y + 128, '15px Georgia, serif', '#6a5a3a', 'center');
+    }
 
     if (id === 'fridge') {
       roundRect(ctx, s.x + 28, s.y + 48, 114, 66, 8);
@@ -371,35 +375,35 @@ function drawStations(ctx, state) {
       ctx.fillRect(s.x + 156, s.y + 56, 10, 8);
     } else if (id === 'wok') {
       ctx.fillStyle = '#3a3a3a';
-      ctx.fillRect(s.x + 20, s.y + 96, s.w - 40, 16);
+      ctx.fillRect(s.x + 20, s.y + 100, s.w - 40, 16);
       ctx.fillStyle = '#e63b1e';
       for (let i = 0; i < 4; i += 1) {
         ctx.beginPath();
-        ctx.arc(s.x + 44 + i * 34, s.y + 94, 6, 0, Math.PI * 2);
+        ctx.arc(s.x + 44 + i * 34, s.y + 98, 6, 0, Math.PI * 2);
         ctx.fill();
       }
       ctx.fillStyle = '#222222';
       ctx.beginPath();
-      ctx.arc(s.x + s.w / 2, s.y + 78, 52, 0, Math.PI);
+      ctx.arc(s.x + s.w / 2, s.y + 76, 46, 0, Math.PI);
       ctx.fill();
       ctx.fillStyle = '#444444';
       ctx.beginPath();
-      ctx.ellipse(s.x + s.w / 2, s.y + 78, 52, 12, 0, 0, Math.PI * 2);
+      ctx.ellipse(s.x + s.w / 2, s.y + 76, 46, 11, 0, 0, Math.PI * 2);
       ctx.fill();
       if (state.wok.item) {
-        drawIngredient(ctx, state.wok.item.ing, s.x + s.w / 2, s.y + 74, 22);
-        const frac = state.wok.done ? 1 : state.wok.t / 3.5;
+        drawIngredient(ctx, state.wok.item.ing, s.x + s.w / 2, s.y + 72, 22);
+        const frac = state.wok.done ? 1 : state.wok.t / COOK_TIME;
         ctx.fillStyle = '#d9d9d9';
-        ctx.fillRect(s.x + 30, s.y + 116, s.w - 60, 8);
+        ctx.fillRect(s.x + 30, s.y + 118, s.w - 60, 8);
         ctx.fillStyle = state.wok.done ? '#2e9e4f' : '#ff8a2a';
-        ctx.fillRect(s.x + 30, s.y + 116, (s.w - 60) * frac, 8);
+        ctx.fillRect(s.x + 30, s.y + 118, (s.w - 60) * frac, 8);
         if (!state.wok.done) {
-          text(ctx, 'SIZZLE!', s.x + s.w / 2, s.y + 46, 'bold 22px Georgia, serif', '#ff5a3c', 'center');
+          text(ctx, 'SIZZLE!', s.x + s.w / 2, s.y + 52, 'bold 22px Georgia, serif', '#ff5a3c', 'center');
         } else {
-          text(ctx, 'MATANG! Ambil!', s.x + s.w / 2, s.y + 46, 'bold 18px Georgia, serif', '#2e9e4f', 'center');
+          text(ctx, 'MATANG! Ambil!', s.x + s.w / 2, s.y + 52, 'bold 18px Georgia, serif', '#2e9e4f', 'center');
         }
       } else {
-        text(ctx, 'taruh bahan di sini', s.x + s.w / 2, s.y + 66, '15px Georgia, serif', '#8a6a3a', 'center');
+        text(ctx, 'taruh bahan di sini', s.x + s.w / 2, s.y + 52, '15px Georgia, serif', '#8a6a3a', 'center');
       }
     } else if (id === 'plate') {
       if (state.plate.dish) {
@@ -442,7 +446,7 @@ function drawStations(ctx, state) {
         state.servedPlates.forEach((dish, i) => {
           drawDish(ctx, dish, s.x + 60 + i * 120, s.y + 84, 30);
         });
-        text(ctx, 'TERSAJI: ' + state.servedPlates.length + ' piring', s.x + s.w / 2, s.y + 46, 'bold 15px Georgia, serif', '#2e9e4f', 'center');
+        text(ctx, 'TERSAJI: ' + state.servedPlates.length + ' piring', s.x + s.w / 2, s.y + 132, 'bold 15px Georgia, serif', '#2e9e4f', 'center');
       }
     }
   }
@@ -542,7 +546,7 @@ function drawOrderBoard(ctx, state) {
   ctx.restore();
   text(ctx, 'SKOR ' + state.score, 1264, 22, 'bold 32px Georgia, serif', '#ffffff', 'right');
   const comboText = state.combo >= 2 ? 'KOMBO x' + (state.combo >= 3 ? 3 : 2) + '  •  ' : '';
-  text(ctx, comboText + 'SAJI ' + state.served + '/' + 8, 1264, 48, 'bold 20px Georgia, serif', state.combo >= 2 ? '#ffd94d' : '#ffe9a8', 'right');
+  text(ctx, comboText + 'SAJI ' + state.served + '/' + WIN_SERVES, 1264, 48, 'bold 20px Georgia, serif', state.combo >= 2 ? '#ffd94d' : '#ffe9a8', 'right');
 }
 
 function drawChef(ctx, state) {
@@ -619,19 +623,19 @@ export function createRenderer(canvas) {
       ctx.fill();
     }
     ctx.globalAlpha = 1;
+    drawOrderBoard(ctx, state);
     for (const f of state.floats) {
       ctx.globalAlpha = Math.max(0, Math.min(1, f.life));
-      text(ctx, f.text, f.x, f.y, 'bold 20px Georgia, serif', f.color, 'center');
+      text(ctx, f.text, f.x, Math.max(170, f.y), 'bold 20px Georgia, serif', f.color, 'center');
     }
     ctx.globalAlpha = 1;
-    drawOrderBoard(ctx, state);
     if (state.rushBanner > 0) {
       const a = Math.min(1, state.rushBanner);
       ctx.globalAlpha = a;
-      roundRect(ctx, 440, 158, 400, 52, 12);
+      roundRect(ctx, 440, 478, 400, 52, 12);
       ctx.fillStyle = '#e63b1e';
       ctx.fill();
-      text(ctx, '⚡ RUSH HOUR! Pesanan makin cepat! ⚡', 640, 185, 'bold 24px Georgia, serif', '#ffffff', 'center');
+      text(ctx, '⚡ RUSH HOUR! Pesanan makin cepat! ⚡', 640, 505, 'bold 24px Georgia, serif', '#ffffff', 'center');
       ctx.globalAlpha = 1;
     } else if (state.rush) {
       roundRect(ctx, 1064, 158, 200, 30, 8);

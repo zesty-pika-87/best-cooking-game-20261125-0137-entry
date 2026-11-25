@@ -19,8 +19,8 @@ export const EVENT_WRONG = 64;
 export const EVENT_TAKE = 128;
 export const EVENT_SIZZLE = 256;
 
-const SPAWN_EASY = 14;
-const SPAWN_RUSH = 8;
+const SPAWN_EASY = 16;
+const SPAWN_RUSH = 9;
 
 function newItem(ing) {
   return { ing, doneSteps: 0 };
@@ -43,16 +43,18 @@ function matchRecipe(ids) {
   return RECIPES.find((r) => sortedIds(r.needs) === key) || null;
 }
 
-function isSubsetOfSomeRecipe(ids) {
-  return RECIPES.some((r) => {
-    const rest = [...r.needs];
-    return ids.every((id) => {
-      const i = rest.indexOf(id);
-      if (i === -1) return false;
-      rest.splice(i, 1);
-      return true;
-    });
+function isSubsetOf(ids, needs) {
+  const rest = [...needs];
+  return ids.every((id) => {
+    const i = rest.indexOf(id);
+    if (i === -1) return false;
+    rest.splice(i, 1);
+    return true;
   });
+}
+
+function isSubsetOfSomeRecipe(ids) {
+  return RECIPES.some((r) => isSubsetOf(ids, r.needs));
 }
 
 export function createWorld(rng) {
@@ -156,33 +158,42 @@ export function createWorld(rng) {
 
   // Rute optimal untuk order tertua: urutan stasiun yang harus dikunjungi.
   // Inilah "Rute Terlihat": daftar ini yang digambar bernomor di lantai.
+  // Urutan prioritasnya mencegah jalan buntu: selesaikan dulu yang sedang
+  // diolah (talenan/wajan), proses bahan yang dibawa, baru ambil bahan baru.
   function planRoute() {
     const chef = state.chef;
-    const dish = chef.carrying.find((it) => it.dish);
-    if (dish) return ['serve'];
+    if (chef.carrying.some((it) => it.dish)) return ['serve'];
     if (state.plate.wrong) return ['plate'];
     if (state.plate.dish) return ['plate', 'serve'];
+    if (state.board.item) {
+      const chain = ['board'];
+      if (INGREDIENTS[state.board.item.ing].steps.includes('cook')) chain.push('wok');
+      chain.push('plate', 'serve');
+      return chain;
+    }
+    if (state.wok.item) return ['wok', 'plate', 'serve'];
     const order = state.orders[0];
     if (!order) return ['fridge'];
+    const unprocessed = chef.carrying.find((it) => it.ing && !itemDone(it));
+    if (unprocessed) {
+      const chain = [];
+      const next = itemNextStep(unprocessed);
+      if (next === 'chop') chain.push('board');
+      if (next === 'cook' || (next === 'chop' && INGREDIENTS[unprocessed.ing].steps.includes('cook'))) chain.push('wok');
+      chain.push('plate', 'serve');
+      return [...new Set(chain)];
+    }
+    if (chef.carrying.some((it) => it.ing && itemDone(it))) return ['plate', 'serve'];
     const missing = missingFor(order);
     if (missing.length === 0) return ['plate', 'serve'];
+    if (chef.carrying.length >= CARRY_MAX) return ['plate', 'serve'];
     const ing = missing[0];
-    const carried = chef.carrying.find((it) => it.ing === ing);
-    const chain = [];
-    if (!carried) chain.push('fridge');
-    else {
-      const next = itemNextStep(carried);
-      if (next === 'chop') chain.push('board');
-      if (next === 'cook' || (next === null && false)) chain.push('wok');
-      if (carried && itemNextStep(carried) === 'chop') chain.push('wok');
-    }
-    if (!carried) {
-      const steps = INGREDIENTS[ing].steps;
-      if (steps.includes('chop')) chain.push('board');
-      if (steps.includes('cook')) chain.push('wok');
-    }
+    const chain = ['fridge'];
+    const steps = INGREDIENTS[ing].steps;
+    if (steps.includes('chop')) chain.push('board');
+    if (steps.includes('cook')) chain.push('wok');
     chain.push('plate', 'serve');
-    return [...new Set(chain)];
+    return chain;
   }
 
   function nearestStation(x, y) {
@@ -301,7 +312,17 @@ export function createWorld(rng) {
       if (idx !== -1) {
         const it = chef.carrying.splice(idx, 1)[0];
         state.plate.items.push(it.ing);
-        const recipe = matchRecipe(state.plate.items);
+        // Hidangan jadi hanya bila piring cocok dengan pesanan yang sedang
+        // dikerjakan; kalau isinya baru sebagian dari resep target, ia tetap
+        // "dalam proses" walau sudah sama persis dengan resep lain yang
+        // lebih pendek (mis. Nasi Goreng di dalam Nasi Goreng Ayam).
+        const target = state.orders[0] ? recipeById(state.orders[0].recipe) : null;
+        let recipe = null;
+        if (target && sortedIds(state.plate.items) === sortedIds(target.needs)) recipe = target;
+        else {
+          const other = matchRecipe(state.plate.items);
+          if (other && !(target && isSubsetOf(state.plate.items, target.needs))) recipe = other;
+        }
         if (recipe) {
           state.plate.dish = recipe.id;
           floatText(STATIONS.plate.x + 85, STATIONS.plate.y - 8, recipe.name + ' jadi!', '#ffe9a8');
@@ -322,6 +343,9 @@ export function createWorld(rng) {
       const dish = chef.carrying[idx].dish;
       const orderIdx = state.orders.findIndex((o) => o.recipe === dish);
       if (orderIdx === -1) {
+        // Hidangan salah disajikan ke pelanggan yang tidak memesannya:
+        // hidangan terbuang, kombo putus, waktu hilang.
+        chef.carrying.splice(idx, 1);
         state.combo = 0;
         floatText(STATIONS.serve.x + 194, STATIONS.serve.y - 8, 'Tidak ada yang pesan ini!', '#ff9a9a');
         return EVENT_WRONG;

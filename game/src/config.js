@@ -8,22 +8,22 @@ export const STEP = 1 / 60;
 export const BEST_KEY = 'pasar-malam-rush-best';
 
 export const GAME_TIME = 180;
-export const WIN_SERVES = 8;
+export const WIN_SERVES = 6;
 export const MAX_FAILS = 3;
 export const CARRY_MAX = 2;
 export const ORDER_MAX = 3;
-export const PATIENCE = 50;
+export const PATIENCE = 55;
 export const RUSH_AT = 60;
-export const COOK_TIME = 3.5;
+export const COOK_TIME = 2.5;
 export const CHOP_HITS = 3;
-export const CHEF_SPEED = 300;
+export const CHEF_SPEED = 380;
 
 // Stasiun dapur, satu baris di tengah layar. standX/standY adalah titik tempat
 // koki berdiri saat memakai stasiun itu (tepat di bawah meja stasiun).
 export const STATIONS = {
   fridge: { id: 'fridge', name: 'KULKAS', sub: 'ambil bahan', x: 36, y: 196, w: 170, h: 148, standX: 121, standY: 372, color: '#7fd4e8', accent: '#2b7f9e' },
   board: { id: 'board', name: 'TALENAN', sub: 'potong 3x', x: 236, y: 196, w: 170, h: 148, standX: 321, standY: 372, color: '#e8c07f', accent: '#9e6b2b' },
-  wok: { id: 'wok', name: 'WAJAN', sub: 'masak 3,5 dtk', x: 436, y: 196, w: 190, h: 148, standX: 531, standY: 372, color: '#e88a5a', accent: '#9e3d1e' },
+  wok: { id: 'wok', name: 'WAJAN', sub: 'masak 2,5 dtk', x: 436, y: 196, w: 190, h: 148, standX: 531, standY: 372, color: '#e88a5a', accent: '#9e3d1e' },
   plate: { id: 'plate', name: 'PIRING', sub: 'rakit hidangan', x: 656, y: 196, w: 170, h: 148, standX: 741, standY: 372, color: '#f2f2f2', accent: '#7a7a7a' },
   serve: { id: 'serve', name: 'JENDELA SAJI', sub: 'antar pesanan', x: 856, y: 196, w: 388, h: 148, standX: 1050, standY: 372, color: '#ffd94d', accent: '#9e7b00' },
 };

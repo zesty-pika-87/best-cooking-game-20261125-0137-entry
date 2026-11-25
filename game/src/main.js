@@ -23,6 +23,8 @@ const seed = Number.isInteger(seedParam) ? seedParam : Math.floor(Math.random() 
 const canvas = document.getElementById('game');
 const status = document.getElementById('status');
 const world = createWorld(createRandom(seed));
+// Diekspos untuk playtest otomatis (CDP): membaca state, bukan mengubah aturan.
+window.__world = world;
 const renderer = createRenderer(canvas);
 const audio = createAudio();
 
@@ -76,7 +78,7 @@ function runGame() {
     accumulator = 0;
     screen = SCREEN_PLAY;
     audio.unlock();
-    announce('Main. Sajikan 8 hidangan sebelum waktu habis.');
+    announce('Main. Sajikan 6 hidangan sebelum waktu habis.');
   }
 
   function endGame(won) {

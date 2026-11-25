@@ -67,8 +67,9 @@ export function drawOver(ctx, state, best) {
   ctx.lineWidth = 5;
   ctx.strokeStyle = state.won ? '#2e9e4f' : '#e63b1e';
   ctx.stroke();
-  centerText(ctx, state.won ? '★ MENANG! ★' : 'WAKTU HABIS', 640, 200, 'bold 64px Georgia, serif', state.won ? '#2e9e4f' : '#e63b1e');
-  centerText(ctx, state.won ? 'Gerobakmu jadi primadona pasar malam!' : 'Gerobak tutup — pelanggan pulang lapar.', 640, 258, '22px Georgia, serif', '#4a3a6a');
+  const title = state.won ? '★ MENANG! ★' : state.overReason === 'fails' ? 'PESANAN HANGUS!' : 'WAKTU HABIS';
+  centerText(ctx, title, 640, 200, 'bold 64px Georgia, serif', state.won ? '#2e9e4f' : '#e63b1e');
+  centerText(ctx, state.won ? 'Gerobakmu jadi primadona pasar malam!' : state.overReason === 'fails' ? 'Tiga pesanan hangus — pelanggan kecewa dan pulang.' : 'Gerobak tutup — pelanggan pulang lapar.', 640, 258, '22px Georgia, serif', '#4a3a6a');
   centerText(ctx, 'SKOR  ' + state.score, 640, 330, 'bold 54px Georgia, serif', '#2b1a4d');
   centerText(ctx, 'Hidangan disajikan: ' + state.served + '    •    Kombo terbaik: x' + Math.max(1, state.bestCombo) + '    •    Pesanan hangus: ' + state.failed, 640, 392, '22px Georgia, serif', '#4a3a6a');
   centerText(ctx, 'Skor terbaik: ' + Math.max(best, state.score), 640, 430, '20px Georgia, serif', '#8a5a00');
