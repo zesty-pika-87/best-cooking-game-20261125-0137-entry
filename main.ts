@@ -6,7 +6,9 @@
 // entri ini adalah "Rute Terlihat": begitu pemain mengambil pesanan, lantai
 // dapur menampilkan rute optimal sebagai garis putus-putus bercahaya dengan
 // nomor urutan stasiun, jadi perencanaan rute — yang diminta kriteria 2 —
-// terlihat langsung di satu frame, bukan hanya tertulis di aturan.
+// terlihat langsung di satu frame, bukan hanya tertulis di aturan. Target:
+// sajikan 8 hidangan dalam 180 detik; 3 pesanan hangus berarti kalah, dan
+// serve tepat waktu beruntun menaikkan kombo x2 lalu x3.
 //
 // Program ini (Node 22, stdlib saja) menyerahkan entrinya: ia menyalin
 // folder game/ dan screenshots/ di samping file ini ke /output lalu menulis
